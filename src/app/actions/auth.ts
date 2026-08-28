@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { readPlatformSettings } from "@/lib/admin/settings";
 import { loginEmailForPhone } from "@/lib/auth/phone-identity";
 import { getCurrentProfile } from "@/lib/auth/profile";
 import { clearPremiumReceipt, readPremiumReceipt } from "@/lib/billing-server";
@@ -17,7 +18,7 @@ import {
   writeDemoAccount,
   type DemoAccount,
 } from "@/lib/demo/accounts";
-import { userIdFromPhone } from "@/lib/ids";
+import { setDemoSession } from "@/lib/demo/session";
 import { MIN_PASSWORD_LENGTH, validatePassword } from "@/lib/password";
 import { attachPaymentToPhone } from "@/lib/payments";
 import { isValidPhone, normalizePhone } from "@/lib/phone";
@@ -47,34 +48,6 @@ function validateEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim().toLowerCase());
 }
 
-async function setDemoSession(phone: string, account: DemoAccount) {
-  const store = await cookies();
-  store.set(
-    DEMO_SESSION_COOKIE,
-    JSON.stringify({
-      id: userIdFromPhone(phone),
-      phone,
-      email: account.email,
-      fullName: account.fullName,
-      plan: account.plan,
-    }),
-    {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30,
-    },
-  );
-  store.set(RESET_BOOKS_COOKIE, "1", {
-    httpOnly: false,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60,
-  });
-}
-
 export async function signInAction(formData: FormData) {
   const phone = normalizePhone(String(formData.get("phone") ?? ""));
   const password = String(formData.get("password") ?? "");
@@ -96,6 +69,24 @@ export async function signInAction(formData: FormData) {
             ? "That phone number and password do not match an account."
             : authError.message,
       };
+    }
+
+    // A suspended account must not get a session, even with the right password.
+    const admin = createAdminSupabase();
+    if (admin) {
+      const { data: standing } = await admin
+        .from("profiles")
+        .select("suspended, suspended_reason")
+        .eq("phone", phone)
+        .maybeSingle();
+      if (standing?.suspended) {
+        await supabase.auth.signOut();
+        return {
+          error: `This account is suspended. ${
+            standing.suspended_reason ?? ""
+          } Contact customer service.`.trim(),
+        };
+      }
     }
     const profile = await getCurrentProfile();
     await rememberAccount({
@@ -130,6 +121,11 @@ export async function signUpAction(formData: FormData) {
   if (weakPassword) return { error: weakPassword };
   if (!fullName) return { error: "Enter your name." };
   if (!validateEmail(email)) return { error: "Enter a valid email address." };
+
+  const settings = await readPlatformSettings();
+  if (!settings.signupsEnabled) {
+    return { error: "New accounts are closed at the moment. Please try later." };
+  }
 
   // A Premium account can only be created against a paid receipt.
   const receipt = plan === "premium" ? await readPremiumReceipt() : null;

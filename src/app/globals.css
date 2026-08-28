@@ -176,3 +176,298 @@ body {
   background: #ffffff;
   color: #1d4ed8;
 }
+
+/* ==========================================================================
+   Admin panel
+   A separate surface from the client app: its own tokens, its own light and
+   dark palettes, and class names prefixed ad- so none of the blue-box rules
+   above reach into it.
+   ========================================================================== */
+
+.admin {
+  --ad-bg: #f5f7fb;
+  --ad-surface: #ffffff;
+  --ad-surface-2: #fafbfe;
+  --ad-raised: #ffffff;
+  --ad-border: #e3e8f0;
+  --ad-border-strong: #d3dbe8;
+  --ad-text: #101828;
+  --ad-text-soft: #475467;
+  --ad-text-mute: #737e93;
+  --ad-brand: #2563eb;
+  --ad-brand-hover: #1d4ed8;
+  --ad-brand-soft: #eef4ff;
+  --ad-brand-text: #1d4ed8;
+  --ad-good: #067647;
+  --ad-good-soft: #ecfdf3;
+  --ad-warn: #b54708;
+  --ad-warn-soft: #fffaeb;
+  --ad-bad: #b42318;
+  --ad-bad-soft: #fef3f2;
+  --ad-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --ad-shadow-lg: 0 8px 24px rgba(16, 24, 40, 0.08);
+
+  background: var(--ad-bg);
+  color: var(--ad-text);
+  color-scheme: light;
+}
+
+.admin.dark {
+  --ad-bg: #0a0f1c;
+  --ad-surface: #111827;
+  --ad-surface-2: #0f1626;
+  --ad-raised: #1a2337;
+  --ad-border: #1f2a3f;
+  --ad-border-strong: #2b3852;
+  --ad-text: #e9edf5;
+  --ad-text-soft: #a9b6cc;
+  --ad-text-mute: #7d8aa3;
+  --ad-brand: #5b8dff;
+  --ad-brand-hover: #7aa4ff;
+  --ad-brand-soft: #16203a;
+  --ad-brand-text: #9dbcff;
+  --ad-good: #47cd89;
+  --ad-good-soft: #0d2a1e;
+  --ad-warn: #fdb022;
+  --ad-warn-soft: #2b2008;
+  --ad-bad: #f97066;
+  --ad-bad-soft: #2d1210;
+  --ad-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --ad-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45);
+
+  color-scheme: dark;
+}
+
+.admin .ad-shell {
+  background: var(--ad-bg);
+}
+
+.admin .ad-sidebar,
+.admin .ad-topbar {
+  background: var(--ad-surface);
+  border-color: var(--ad-border);
+}
+
+.admin .ad-card {
+  background: var(--ad-surface);
+  border: 1px solid var(--ad-border);
+  border-radius: 0.875rem;
+  box-shadow: var(--ad-shadow);
+}
+
+.admin .ad-muted {
+  color: var(--ad-text-mute);
+}
+
+.admin .ad-soft {
+  color: var(--ad-text-soft);
+}
+
+.admin .ad-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--ad-text-soft);
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.admin .ad-nav-link:hover {
+  background: var(--ad-surface-2);
+  color: var(--ad-text);
+}
+
+.admin.dark .ad-nav-link:hover {
+  background: var(--ad-raised);
+}
+
+.admin .ad-nav-link[data-active="true"] {
+  background: var(--ad-brand-soft);
+  color: var(--ad-brand-text);
+  font-weight: 500;
+}
+
+.admin .ad-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--ad-border-strong);
+  background: var(--ad-surface);
+  color: var(--ad-text);
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background-color 120ms ease, border-color 120ms ease,
+    color 120ms ease;
+}
+
+.admin .ad-btn:hover:not(:disabled) {
+  border-color: var(--ad-brand);
+  color: var(--ad-brand-text);
+  background: var(--ad-brand-soft);
+}
+
+.admin .ad-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.admin .ad-btn-primary {
+  background: var(--ad-brand);
+  border-color: var(--ad-brand);
+  color: #ffffff;
+}
+
+.admin .ad-btn-primary:hover:not(:disabled) {
+  background: var(--ad-brand-hover);
+  border-color: var(--ad-brand-hover);
+  color: #ffffff;
+}
+
+.admin .ad-btn-danger {
+  border-color: var(--ad-bad);
+  color: var(--ad-bad);
+  background: var(--ad-bad-soft);
+}
+
+.admin .ad-btn-danger:hover:not(:disabled) {
+  background: var(--ad-bad);
+  border-color: var(--ad-bad);
+  color: #ffffff;
+}
+
+.admin .ad-input {
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid var(--ad-border-strong);
+  background: var(--ad-surface);
+  color: var(--ad-text);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.admin .ad-input:focus {
+  border-color: var(--ad-brand);
+  box-shadow: 0 0 0 3px var(--ad-brand-soft);
+}
+
+.admin .ad-input::placeholder {
+  color: var(--ad-text-mute);
+}
+
+.admin .ad-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 999px;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+
+.admin .ad-badge-neutral {
+  background: var(--ad-surface-2);
+  color: var(--ad-text-soft);
+  border-color: var(--ad-border);
+}
+
+.admin.dark .ad-badge-neutral {
+  background: var(--ad-raised);
+}
+
+.admin .ad-badge-brand {
+  background: var(--ad-brand-soft);
+  color: var(--ad-brand-text);
+}
+
+.admin .ad-badge-good {
+  background: var(--ad-good-soft);
+  color: var(--ad-good);
+}
+
+.admin .ad-badge-warn {
+  background: var(--ad-warn-soft);
+  color: var(--ad-warn);
+}
+
+.admin .ad-badge-bad {
+  background: var(--ad-bad-soft);
+  color: var(--ad-bad);
+}
+
+.admin .ad-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.admin .ad-table th {
+  text-align: left;
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ad-text-mute);
+  font-weight: 600;
+  padding: 0.625rem 0.875rem;
+  background: var(--ad-surface-2);
+  border-bottom: 1px solid var(--ad-border);
+  white-space: nowrap;
+}
+
+.admin.dark .ad-table th {
+  background: var(--ad-surface-2);
+}
+
+.admin .ad-table td {
+  padding: 0.75rem 0.875rem;
+  border-bottom: 1px solid var(--ad-border);
+  vertical-align: middle;
+}
+
+.admin .ad-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.admin .ad-table tbody tr:hover td {
+  background: var(--ad-surface-2);
+}
+
+.admin .ad-divide {
+  border-color: var(--ad-border);
+}
+
+.admin .ad-kbd {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  background: var(--ad-surface-2);
+  border: 1px solid var(--ad-border);
+  border-radius: 0.375rem;
+  padding: 0.125rem 0.375rem;
+  color: var(--ad-text-soft);
+}
+
+.admin.dark .ad-kbd {
+  background: var(--ad-raised);
+}
+
+@media print {
+  .admin .ad-sidebar,
+  .admin .ad-topbar,
+  .no-print {
+    display: none !important;
+  }
+
+  .admin .ad-shell {
+    display: block;
+    background: #ffffff;
+    color: #111827;
+  }
+}

@@ -273,6 +273,8 @@ export function FinanceProvider({
           amount,
           date: input.date,
           description: input.description.trim(),
+          origin: "client",
+          reversesId: null,
         };
         if (usingSupabase) {
           const supabase = createClient();
@@ -284,6 +286,7 @@ export function FinanceProvider({
               amount: row.amount,
               date: row.date,
               description: row.description,
+              origin: "client",
             })
             .select("*")
             .single();
@@ -300,6 +303,11 @@ export function FinanceProvider({
       async updateTransaction(id, input) {
         const amount = Number(input.amount);
         if (!Number.isFinite(amount) || amount <= 0) return "Enter an amount greater than 0.";
+        const current = snapshot.transactions.find((t) => t.id === id);
+        if (!current) return "That record is gone.";
+        if (current.origin !== "client") {
+          return "Staff corrections stay as written. Contact support if one looks wrong.";
+        }
         if (usingSupabase) {
           const supabase = createClient();
           const { error } = await supabase
@@ -330,6 +338,10 @@ export function FinanceProvider({
         return null;
       },
       async deleteTransaction(id) {
+        const current = snapshot.transactions.find((t) => t.id === id);
+        if (current && current.origin !== "client") {
+          return;
+        }
         if (usingSupabase) {
           const supabase = createClient();
           await supabase.from("transactions").delete().eq("id", id);
@@ -443,6 +455,8 @@ function mapCategory(row: Record<string, unknown>): Category {
 }
 
 function mapTransaction(row: Record<string, unknown>): Transaction {
+  const origin =
+    row.origin === "admin" || row.origin === "reversal" ? row.origin : "client";
   return {
     id: String(row.id),
     userId: String(row.user_id),
@@ -450,6 +464,8 @@ function mapTransaction(row: Record<string, unknown>): Transaction {
     amount: Number(row.amount),
     date: String(row.date),
     description: String(row.description ?? ""),
+    origin,
+    reversesId: row.reverses_id ? String(row.reverses_id) : null,
   };
 }
 

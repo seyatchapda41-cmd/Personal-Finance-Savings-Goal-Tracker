@@ -4,7 +4,10 @@ import { updateSession } from "@/lib/supabase/middleware";
 export async function middleware(request: NextRequest) {
   const { response, userId } = await updateSession(request);
   const path = request.nextUrl.pathname;
-  const isApp = path.startsWith("/app") || path.startsWith("/admin");
+  // Staff sign in lives under /admin but must stay reachable while signed out.
+  const isAdminLogin = path.startsWith("/admin/login");
+  const isAdmin = path.startsWith("/admin") && !isAdminLogin;
+  const isApp = path.startsWith("/app") || isAdmin;
   const isAuth =
     path.startsWith("/login") ||
     path.startsWith("/signup") ||
@@ -12,8 +15,8 @@ export async function middleware(request: NextRequest) {
 
   if (isApp && !userId) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("next", path);
+    url.pathname = isAdmin ? "/admin/login" : "/login";
+    if (!isAdmin) url.searchParams.set("next", path);
     return NextResponse.redirect(url);
   }
 

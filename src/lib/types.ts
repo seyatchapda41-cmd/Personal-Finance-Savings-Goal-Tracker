@@ -17,6 +17,8 @@ export type Category = {
   type: CategoryType;
 };
 
+export type TransactionOrigin = "client" | "admin" | "reversal";
+
 export type Transaction = {
   id: string;
   userId: string;
@@ -24,6 +26,8 @@ export type Transaction = {
   amount: number;
   date: string;
   description: string;
+  origin: TransactionOrigin;
+  reversesId: string | null;
 };
 
 export type SavingsGoal = {

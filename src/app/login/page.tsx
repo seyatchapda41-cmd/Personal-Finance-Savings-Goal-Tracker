@@ -77,6 +77,10 @@ export default async function LoginPage({
           </ul>
         </div>
       ) : null}
+
+      <p className="mt-10 text-center text-xs text-mute">
+        <Link href="/admin/login">Staff sign in</Link>
+      </p>
     </div>
   );
 }

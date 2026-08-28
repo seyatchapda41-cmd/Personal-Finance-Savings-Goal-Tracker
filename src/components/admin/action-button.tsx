@@ -4,14 +4,14 @@ import { useState } from "react";
 
 type ActionResult = { error?: string; ok?: true };
 
-// One button that runs a founder action, asking twice when the action is
+// One button that runs an admin action, asking twice when the action is
 // destructive.
 export function ActionButton({
   action,
   fields,
   label,
   confirmLabel,
-  className = "btn-secondary",
+  className = "ad-btn",
   confirm = false,
 }: {
   action: (formData: FormData) => Promise<ActionResult>;
@@ -42,10 +42,10 @@ export function ActionButton({
 
   return (
     <span className="inline-flex flex-col items-start gap-1">
-      <span className="inline-flex items-center gap-2">
+      <span className="inline-flex items-center gap-1.5">
         <button
           type="button"
-          className={`${className} text-xs`}
+          className={armed ? "ad-btn ad-btn-danger" : className}
           onClick={run}
           disabled={pending}
         >
@@ -58,7 +58,7 @@ export function ActionButton({
         {armed ? (
           <button
             type="button"
-            className="text-xs underline"
+            className="ad-muted text-xs underline"
             onClick={() => setArmed(false)}
             disabled={pending}
           >
@@ -66,7 +66,11 @@ export function ActionButton({
           </button>
         ) : null}
       </span>
-      {error ? <span className="text-xs text-rose-600">{error}</span> : null}
+      {error ? (
+        <span className="text-xs" style={{ color: "var(--ad-bad)" }}>
+          {error}
+        </span>
+      ) : null}
     </span>
   );
 }

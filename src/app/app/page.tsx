@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { categoryById, goalProgress } from "@/lib/analytics";
+import { categoryById, goalProgress, signedAmount } from "@/lib/analytics";
 import { formatMoney } from "@/lib/format";
 import { useFinance } from "@/lib/finance-context";
 
@@ -23,7 +23,7 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="card">
           <p className="text-xs text-mute">Balance (all time)</p>
           <p className="mt-2 text-2xl font-semibold">{formatMoney(balance.net)}</p>
@@ -35,6 +35,12 @@ export default function DashboardPage() {
         <div className="card">
           <p className="text-xs text-mute">Expenses this month</p>
           <p className="mt-2 text-2xl font-semibold">{formatMoney(month.expense)}</p>
+        </div>
+        <div className="card">
+          <p className="text-xs text-mute">Profit this month</p>
+          <p className="mt-2 text-2xl font-semibold">
+            {formatMoney(month.income - month.expense)}
+          </p>
         </div>
       </div>
 
@@ -58,18 +64,23 @@ export default function DashboardPage() {
             <ul className="mt-4 divide-y divide-line">
               {recent.map((tx) => {
                 const category = categoryById(snapshot.categories, tx.categoryId);
-                const expense = category?.type === "expense";
+                const signed = signedAmount(tx, snapshot.categories);
                 return (
                   <li key={tx.id} className="flex items-center justify-between py-3 text-sm">
                     <div>
                       <p className="font-medium">{tx.description || category?.name}</p>
                       <p className="text-xs text-mute">
                         {tx.date} · {category?.name}
+                        {tx.origin === "admin"
+                          ? " · Staff"
+                          : tx.origin === "reversal"
+                            ? " · Reversal"
+                            : ""}
                       </p>
                     </div>
-                    <span className={expense ? "text-rose-600" : "text-emerald-600"}>
-                      {expense ? "-" : "+"}
-                      {formatMoney(tx.amount)}
+                    <span className={signed < 0 ? "text-rose-600" : "text-emerald-600"}>
+                      {signed < 0 ? "-" : "+"}
+                      {formatMoney(Math.abs(signed))}
                     </span>
                   </li>
                 );

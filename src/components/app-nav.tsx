@@ -11,8 +11,10 @@ const NAV = [
   { href: "/app/account", label: "Account" },
   { href: "/app", label: "Dashboard" },
   { href: "/app/transactions", label: "Transactions" },
-  { href: "/app/categories", label: "Categories" },
+  { href: "/app/budget", label: "Budget" },
   { href: "/app/goals", label: "Goals" },
+  { href: "/app/stats", label: "Statistics" },
+  { href: "/app/categories", label: "Categories" },
   { href: "/app/support", label: "Support" },
   { href: "/app/settings", label: "Settings" },
 ];

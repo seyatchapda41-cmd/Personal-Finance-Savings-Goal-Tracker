@@ -15,6 +15,14 @@ export type LedgerPayment = {
   status: "paid" | "refunded";
 };
 
+export type LedgerSupportReply = {
+  id: string;
+  authorType: "client" | "staff";
+  authorLabel: string;
+  body: string;
+  createdAt: string;
+};
+
 export type LedgerSupport = {
   ref: string;
   phone: string;
@@ -25,6 +33,7 @@ export type LedgerSupport = {
   callbackRequested: boolean;
   status: "open" | "answered" | "closed";
   createdAt: string;
+  replies: LedgerSupportReply[];
 };
 
 async function read<T>(name: string): Promise<T[]> {
@@ -76,7 +85,27 @@ export function readDemoSupport() {
 
 export async function addDemoSupport(request: LedgerSupport) {
   const rows = await readDemoSupport();
-  await write(SUPPORT_COOKIE, [request, ...rows]);
+  await write(SUPPORT_COOKIE, [{ ...request, replies: request.replies ?? [] }, ...rows]);
+}
+
+export async function addDemoSupportReply(
+  ref: string,
+  reply: LedgerSupportReply,
+  status?: LedgerSupport["status"],
+) {
+  const rows = await readDemoSupport();
+  await write(
+    SUPPORT_COOKIE,
+    rows.map((row) =>
+      row.ref === ref
+        ? {
+            ...row,
+            replies: [...(row.replies ?? []), reply],
+            status: status ?? row.status,
+          }
+        : row,
+    ),
+  );
 }
 
 export async function updateDemoSupport(

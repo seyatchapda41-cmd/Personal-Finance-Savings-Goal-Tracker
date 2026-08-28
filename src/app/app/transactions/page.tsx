@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { categoryById } from "@/lib/analytics";
+import { categoryById, signedAmount } from "@/lib/analytics";
 import { formatMoney, todayIso } from "@/lib/format";
 import { useFinance } from "@/lib/finance-context";
 
@@ -167,7 +167,15 @@ export default function TransactionsPage() {
             <tbody>
               {rows.map((tx) => {
                 const category = categoryById(snapshot.categories, tx.categoryId);
-                if (editing === tx.id) {
+                const signed = signedAmount(tx, snapshot.categories);
+                const locked = tx.origin !== "client";
+                const originLabel =
+                  tx.origin === "admin"
+                    ? "Staff correction"
+                    : tx.origin === "reversal"
+                      ? "Reversal"
+                      : null;
+                if (editing === tx.id && !locked) {
                   return (
                     <tr key={tx.id} className="border-b border-line">
                       <td colSpan={5} className="px-4 py-3">
@@ -220,23 +228,34 @@ export default function TransactionsPage() {
                   <tr key={tx.id} className="border-b border-line">
                     <td className="px-4 py-3">{tx.date}</td>
                     <td className="px-4 py-3">{category?.name}</td>
-                    <td className="px-4 py-3">{tx.description || "—"}</td>
                     <td className="px-4 py-3">
-                      {category?.type === "expense" ? "-" : "+"}
-                      {formatMoney(tx.amount)}
+                      {tx.description || "—"}
+                      {originLabel ? (
+                        <span className="mt-0.5 block text-xs text-mute">{originLabel}</span>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3">
+                      {signed < 0 ? "-" : "+"}
+                      {formatMoney(Math.abs(signed))}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button className="text-azure" type="button" onClick={() => setEditing(tx.id)}>
-                        Edit
-                      </button>
-                      {" · "}
-                      <button
-                        className="text-rose-600"
-                        type="button"
-                        onClick={() => void deleteTransaction(tx.id)}
-                      >
-                        Delete
-                      </button>
+                      {locked ? (
+                        <span className="text-xs text-mute">Locked by staff</span>
+                      ) : (
+                        <>
+                          <button className="text-azure" type="button" onClick={() => setEditing(tx.id)}>
+                            Edit
+                          </button>
+                          {" · "}
+                          <button
+                            className="text-rose-600"
+                            type="button"
+                            onClick={() => void deleteTransaction(tx.id)}
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 );

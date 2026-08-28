@@ -1,15 +1,22 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { getCurrentProfile } from "@/lib/auth/profile";
 import { isSupabaseConfigured } from "@/lib/config";
-import { addDemoSupport } from "@/lib/demo/ledger";
+import { addDemoSupport, addDemoSupportReply, readDemoSupport } from "@/lib/demo/ledger";
 import { createServerSupabase } from "@/lib/supabase/server";
 import {
   createTicketRef,
   priorityFor,
   supportTargetFor,
+  validateSupportReply,
   validateSupportRequest,
 } from "@/lib/support";
+
+function refreshSupport() {
+  revalidatePath("/app/support");
+  revalidatePath("/admin", "layout");
+}
 
 export async function sendSupportMessageAction(formData: FormData): Promise<{
   error?: string;
@@ -59,8 +66,74 @@ export async function sendSupportMessageAction(formData: FormData): Promise<{
       callbackRequested,
       status: "open",
       createdAt: new Date().toISOString(),
+      replies: [],
     });
   }
 
+  refreshSupport();
   return { ref, target: supportTargetFor(profile.plan) };
+}
+
+export async function replySupportAction(formData: FormData): Promise<{
+  error?: string;
+  ok?: true;
+}> {
+  const ref = String(formData.get("ref") ?? "");
+  const body = String(formData.get("body") ?? "");
+  const problem = validateSupportReply(body);
+  if (!ref) return { error: "That conversation could not be found." };
+  if (problem) return { error: problem };
+
+  const profile = await getCurrentProfile();
+  if (!profile) return { error: "You are not signed in." };
+
+  const label = profile.fullName || "You";
+
+  if (isSupabaseConfigured()) {
+    const supabase = await createServerSupabase();
+    if (!supabase) return { error: "Supabase is not available." };
+    const { data: ticket } = await supabase
+      .from("support_messages")
+      .select("id, status")
+      .eq("ref", ref)
+      .eq("user_id", profile.id)
+      .maybeSingle();
+    if (!ticket) return { error: "That conversation could not be found." };
+    if (ticket.status === "closed") {
+      return { error: "This conversation is closed. Open a new request if you still need help." };
+    }
+    const { error } = await supabase.from("support_replies").insert({
+      ticket_id: ticket.id,
+      author_type: "client",
+      author_label: label,
+      body: body.trim(),
+    });
+    if (error) return { error: `The reply could not be sent: ${error.message}` };
+    await supabase
+      .from("support_messages")
+      .update({ status: "open" })
+      .eq("id", ticket.id);
+  } else {
+    const ticket = (await readDemoSupport()).find(
+      (row) => row.ref === ref && row.phone === profile.phone,
+    );
+    if (!ticket) return { error: "That conversation could not be found." };
+    if (ticket.status === "closed") {
+      return { error: "This conversation is closed. Open a new request if you still need help." };
+    }
+    await addDemoSupportReply(
+      ref,
+      {
+        id: `SR-${Date.now().toString(36)}`,
+        authorType: "client",
+        authorLabel: label,
+        body: body.trim(),
+        createdAt: new Date().toISOString(),
+      },
+      "open",
+    );
+  }
+
+  refreshSupport();
+  return { ok: true };
 }

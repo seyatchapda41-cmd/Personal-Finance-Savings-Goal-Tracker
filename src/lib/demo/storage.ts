@@ -20,6 +20,12 @@ export function loadSnapshot(profile: Profile): FinanceSnapshot {
     return {
       ...parsed,
       profile: { ...parsed.profile, ...profile },
+      transactions: (parsed.transactions ?? []).map((tx) => ({
+        ...tx,
+        origin:
+          tx.origin === "admin" || tx.origin === "reversal" ? tx.origin : "client",
+        reversesId: tx.reversesId ?? null,
+      })),
     };
   } catch {
     const seeded = emptySnapshot(profile);

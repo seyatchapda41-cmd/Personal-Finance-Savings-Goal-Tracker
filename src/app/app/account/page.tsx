@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { signOutAction } from "@/app/actions/auth";
 import { Stars } from "@/components/stars";
-import { categoryById } from "@/lib/analytics";
+import { categoryById, signedAmount } from "@/lib/analytics";
 import { formatMoney } from "@/lib/format";
 import { useFinance } from "@/lib/finance-context";
 
@@ -14,9 +14,11 @@ export default function AccountPage() {
   const expenseByCategory = useMemo(() => {
     const totals = new Map<string, number>();
     for (const tx of snapshot.transactions) {
+      const signed = signedAmount(tx, snapshot.categories);
+      if (signed >= 0) continue;
       const category = categoryById(snapshot.categories, tx.categoryId);
-      if (category?.type !== "expense") continue;
-      totals.set(category.name, (totals.get(category.name) ?? 0) + tx.amount);
+      if (!category) continue;
+      totals.set(category.name, (totals.get(category.name) ?? 0) + -signed);
     }
     return [...totals.entries()]
       .sort((a, b) => b[1] - a[1])

@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { isLoginEmail } from "@/lib/auth/phone-identity";
 import { isSupabaseConfigured } from "@/lib/config";
+import { normalizePhone } from "@/lib/phone";
 import { normalizePlan } from "@/lib/plans";
 import { DEMO_SESSION_COOKIE, RESET_BOOKS_COOKIE } from "@/lib/supabase/middleware";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -14,11 +15,21 @@ export async function getCurrentProfile(): Promise<Profile | null> {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return null;
-    // The login address is derived from the phone number, so the real contact
-    // details are the ones kept in metadata.
-    const phone =
-      (user.user_metadata?.phone as string | undefined) || user.phone || "";
+
+    const { data: row } = await supabase
+      .from("profiles")
+      .select("phone, email, full_name, plan")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const phone = normalizePhone(
+      row?.phone ||
+        (user.user_metadata?.phone as string | undefined) ||
+        user.phone ||
+        "",
+    );
     const email =
+      (row?.email as string | undefined) ||
       (user.user_metadata?.email as string | undefined) ||
       (isLoginEmail(user.email) ? "" : (user.email ?? ""));
     return {
@@ -26,10 +37,11 @@ export async function getCurrentProfile(): Promise<Profile | null> {
       email,
       phone,
       fullName:
+        (row?.full_name as string | undefined) ||
         (user.user_metadata?.full_name as string | undefined) ||
         phone ||
         "Account",
-      plan: normalizePlan(user.user_metadata?.plan),
+      plan: normalizePlan(row?.plan ?? user.user_metadata?.plan),
     };
   }
 

@@ -31,6 +31,9 @@ create table if not exists public.categories (
   unique (user_id, name)
 );
 
+-- origin records who put the row there: the client, an admin correction, or a
+-- reversal cancelling an earlier row. reverses_id points a reversal at the row
+-- it undoes, so both halves stay visible instead of the history being erased.
 create table if not exists public.transactions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles (id) on delete cascade,
@@ -38,11 +41,34 @@ create table if not exists public.transactions (
   amount numeric(12, 2) not null check (amount > 0),
   date date not null,
   description text,
+  origin text not null default 'client'
+    check (origin in ('client', 'admin', 'reversal')),
+  reverses_id uuid references public.transactions (id) on delete set null,
+  created_by text,
   created_at timestamptz not null default now()
 );
 
 create index if not exists transactions_user_date_idx
   on public.transactions (user_id, date desc);
+
+create index if not exists transactions_reverses_idx
+  on public.transactions (reverses_id);
+
+-- Internal review state for a transaction: a flag customer service can raise
+-- and a private note. Row level security is on with no policies, so a client
+-- can neither read nor clear a flag placed on their own record.
+create table if not exists public.transaction_reviews (
+  transaction_id uuid primary key
+    references public.transactions (id) on delete cascade,
+  flagged boolean not null default false,
+  flag_reason text,
+  note text,
+  reviewed_by text,
+  reviewed_at timestamptz not null default now()
+);
+
+create index if not exists transaction_reviews_flagged_idx
+  on public.transaction_reviews (flagged) where flagged;
 
 create table if not exists public.savings_goals (
   id uuid primary key default gen_random_uuid(),
@@ -89,6 +115,80 @@ create table if not exists public.support_messages (
 create index if not exists support_messages_queue_idx
   on public.support_messages (status, priority, created_at);
 
+-- Follow-up messages on a ticket. The first message stays on support_messages;
+-- staff and the client write every later line here.
+create table if not exists public.support_replies (
+  id uuid primary key default gen_random_uuid(),
+  ticket_id uuid not null references public.support_messages (id) on delete cascade,
+  author_type text not null check (author_type in ('client', 'staff')),
+  author_label text not null,
+  body text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists support_replies_ticket_idx
+  on public.support_replies (ticket_id, created_at);
+
+alter table public.profiles
+  add column if not exists suspended boolean not null default false;
+
+alter table public.profiles
+  add column if not exists suspended_reason text;
+
+-- Admin team. Founders hold every permission; moderators are limited to
+-- day to day work and cannot touch money or platform settings.
+create table if not exists public.admin_users (
+  id uuid primary key default gen_random_uuid(),
+  phone text not null unique,
+  role text not null check (role in ('founder', 'moderator')),
+  full_name text,
+  created_by text,
+  created_at timestamptz not null default now()
+);
+
+-- Every action taken in the panel, kept for security review.
+create table if not exists public.admin_audit_log (
+  id uuid primary key default gen_random_uuid(),
+  actor_phone text not null,
+  actor_role text not null,
+  action text not null,
+  target_type text,
+  target_label text,
+  detail jsonb,
+  outcome text not null default 'success'
+    check (outcome in ('success', 'denied', 'error')),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists admin_audit_created_idx
+  on public.admin_audit_log (created_at desc);
+
+-- Single row holding platform wide switches.
+create table if not exists public.platform_settings (
+  id boolean primary key default true check (id),
+  maintenance_mode boolean not null default false,
+  maintenance_message text,
+  announcement text,
+  announcement_active boolean not null default false,
+  signups_enabled boolean not null default true,
+  updated_by text,
+  updated_at timestamptz not null default now()
+);
+
+insert into public.platform_settings (id) values (true)
+  on conflict (id) do nothing;
+
+create table if not exists public.monthly_budgets (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  month text not null,
+  expense_limit numeric(12, 2) not null check (expense_limit >= 0),
+  unique (user_id, month)
+);
+
+create index if not exists monthly_budgets_user_idx
+  on public.monthly_budgets (user_id, month);
+
 alter table public.profiles enable row level security;
 alter table public.categories enable row level security;
 alter table public.transactions enable row level security;
@@ -100,8 +200,20 @@ create policy "profiles_self" on public.profiles
 create policy "categories_self" on public.categories
   for all using (user_id = auth.uid()) with check (user_id = auth.uid());
 
-create policy "transactions_self" on public.transactions
-  for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+-- A client reads every row on their account, including corrections made for
+-- them, but may only write rows they created themselves.
+create policy "transactions_select_own" on public.transactions
+  for select using (user_id = auth.uid());
+
+create policy "transactions_insert_own" on public.transactions
+  for insert with check (user_id = auth.uid() and origin = 'client');
+
+create policy "transactions_update_own" on public.transactions
+  for update using (user_id = auth.uid() and origin = 'client')
+  with check (user_id = auth.uid() and origin = 'client');
+
+create policy "transactions_delete_own" on public.transactions
+  for delete using (user_id = auth.uid() and origin = 'client');
 
 create policy "goals_self" on public.savings_goals
   for all using (user_id = auth.uid()) with check (user_id = auth.uid());
@@ -110,6 +222,37 @@ alter table public.support_messages enable row level security;
 
 create policy "support_messages_self" on public.support_messages
   for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+alter table public.support_replies enable row level security;
+
+create policy "support_replies_select_own" on public.support_replies
+  for select using (
+    exists (
+      select 1 from public.support_messages t
+      where t.id = ticket_id and t.user_id = auth.uid()
+    )
+  );
+
+create policy "support_replies_insert_client" on public.support_replies
+  for insert with check (
+    author_type = 'client'
+    and exists (
+      select 1 from public.support_messages t
+      where t.id = ticket_id and t.user_id = auth.uid()
+    )
+  );
+
+alter table public.monthly_budgets enable row level security;
+
+create policy "monthly_budgets_self" on public.monthly_budgets
+  for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- No policies on these four: they are reachable only with the service role
+-- key, which never leaves the server.
+alter table public.admin_users enable row level security;
+alter table public.admin_audit_log enable row level security;
+alter table public.platform_settings enable row level security;
+alter table public.transaction_reviews enable row level security;
 
 create or replace function public.handle_new_user()
 returns trigger
