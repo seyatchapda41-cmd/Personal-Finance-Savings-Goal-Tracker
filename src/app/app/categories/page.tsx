@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { VisibleField } from "@/components/visible-field";
 import { useFinance } from "@/lib/finance-context";
 
 export default function CategoriesPage() {
   const { ready, snapshot, addCategory, updateCategory, deleteCategory } = useFinance();
   const [error, setError] = useState<string | null>(null);
+  const [formKey, setFormKey] = useState(0);
 
   if (!ready) return <p className="text-sm text-mute">Loading…</p>;
 
@@ -29,14 +31,31 @@ export default function CategoriesPage() {
             String(data.get("type")) === "income" ? "income" : "expense",
           );
           setError(message);
-          if (!message) form.reset();
+          if (!message) {
+            form.reset();
+            setFormKey((key) => key + 1);
+          }
         }}
       >
-        <input className="input" name="name" placeholder="Category name" required />
-        <select name="type" className="input sm:max-w-40">
+        <VisibleField
+          key={`name-${formKey}`}
+          className="flex-1"
+          label="Category name"
+          name="name"
+          required
+          placeholder="Category name"
+        />
+        <VisibleField
+          key={`type-${formKey}`}
+          className="sm:max-w-44"
+          label="Type"
+          name="type"
+          as="select"
+          defaultValue="expense"
+        >
           <option value="expense">Expense</option>
           <option value="income">Income</option>
-        </select>
+        </VisibleField>
         <button className="btn-primary" type="submit">
           Add
         </button>
@@ -65,7 +84,12 @@ export default function CategoriesPage() {
                         setError(message);
                       }}
                     >
-                      <input className="input" name="name" defaultValue={category.name} />
+                      <VisibleField
+                        className="flex-1"
+                        label="Category name"
+                        name="name"
+                        defaultValue={category.name}
+                      />
                       <button className="btn-secondary" type="submit">
                         Save
                       </button>

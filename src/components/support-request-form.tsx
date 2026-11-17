@@ -2,12 +2,15 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { sendSupportMessageAction } from "@/app/actions/support";
 import { Stars } from "@/components/stars";
+import { VisibleField } from "@/components/visible-field";
 import { useFinance } from "@/lib/finance-context";
 import { PLANS } from "@/lib/plans";
 
 export function SupportRequestForm() {
+  const router = useRouter();
   const { ready, plan, limits, snapshot } = useFinance();
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState<{ ref: string; target: string } | null>(null);
@@ -43,7 +46,8 @@ export function SupportRequestForm() {
           <h2 className="font-semibold">Request sent</h2>
           <p className="text-sm">
             Your reference is <span className="font-medium">{sent.ref}</span>.
-            Customer service will reply in this page.
+            It is open above, and on the admin Conversations page. Customer
+            service will reply in this page.
           </p>
           <p className="text-sm text-mute">{sent.target}.</p>
           <button
@@ -64,23 +68,19 @@ export function SupportRequestForm() {
             if (result.error) setError(result.error);
             else if (result.ref && result.target) {
               setSent({ ref: result.ref, target: result.target });
+              router.refresh();
             }
             setPending(false);
           }}
         >
-          <label className="block text-sm">
-            Subject
-            <input className="input mt-1" name="subject" required />
-          </label>
-          <label className="block text-sm">
-            What is happening?
-            <textarea
-              className="input mt-1 min-h-40"
-              name="message"
-              required
-              placeholder="Describe the problem, and what you expected instead."
-            />
-          </label>
+          <VisibleField label="Subject" name="subject" required />
+          <VisibleField
+            as="textarea"
+            label="What is happening?"
+            name="message"
+            required
+            placeholder="Describe the problem, and what you expected instead."
+          />
           {isPremium ? (
             <label className="flex items-start gap-2 text-sm">
               <input type="checkbox" name="callback" className="mt-1" />

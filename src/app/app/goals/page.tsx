@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { EmptyState } from "@/components/empty-state";
+import { Notice } from "@/components/notice";
+import { VisibleField } from "@/components/visible-field";
 import { goalProgress } from "@/lib/analytics";
 import { formatMoney, todayIso } from "@/lib/format";
 import { useFinance } from "@/lib/finance-context";
@@ -8,6 +11,7 @@ import { useFinance } from "@/lib/finance-context";
 export default function GoalsPage() {
   const { ready, snapshot, addGoal, updateGoal, deleteGoal } = useFinance();
   const [error, setError] = useState<string | null>(null);
+  const [formKey, setFormKey] = useState(0);
 
   if (!ready) return <p className="text-sm text-mute">Loading…</p>;
 
@@ -33,33 +37,62 @@ export default function GoalsPage() {
             targetDate: String(data.get("targetDate")),
           });
           setError(message);
-          if (!message) form.reset();
+          if (!message) {
+            form.reset();
+            setFormKey((key) => key + 1);
+          }
         }}
       >
-        <label className="text-sm sm:col-span-2">
-          Title
-          <input className="input mt-1" name="title" required placeholder="Emergency fund" />
-        </label>
-        <label className="text-sm">
-          Target amount
-          <input className="input mt-1" name="targetAmount" type="number" min="1" step="0.01" required />
-        </label>
-        <label className="text-sm">
-          Already saved
-          <input className="input mt-1" name="currentAmount" type="number" min="0" step="0.01" defaultValue={0} />
-        </label>
-        <label className="text-sm sm:col-span-2">
-          Target date
-          <input className="input mt-1" name="targetDate" type="date" required defaultValue={todayIso()} />
-        </label>
+        <VisibleField
+          key={`title-${formKey}`}
+          className="sm:col-span-2"
+          label="Title"
+          name="title"
+          required
+          placeholder="Emergency fund"
+        />
+        <VisibleField
+          key={`target-${formKey}`}
+          label="Target amount (FCFA)"
+          name="targetAmount"
+          type="number"
+          min={1}
+          step={1}
+          required
+        />
+        <VisibleField
+          key={`saved-${formKey}`}
+          label="Already saved (FCFA)"
+          name="currentAmount"
+          type="number"
+          min={0}
+          step={1}
+          defaultValue={0}
+        />
+        <VisibleField
+          key={`date-${formKey}`}
+          className="sm:col-span-2"
+          label="Target date"
+          name="targetDate"
+          type="date"
+          required
+          defaultValue={todayIso()}
+        />
         <button className="btn-primary sm:col-span-2" type="submit">
           Create goal
         </button>
-        {error ? <p className="text-sm text-rose-600 sm:col-span-2">{error}</p> : null}
+        {error ? (
+          <div className="sm:col-span-2">
+            <Notice tone="bad">{error}</Notice>
+          </div>
+        ) : null}
       </form>
 
       {snapshot.goals.length === 0 ? (
-        <p className="text-sm text-mute">No savings goals yet.</p>
+        <EmptyState
+          title="No savings goals yet"
+          body="Name a target in FCFA and a date you care about. Update what you have already saved as you go."
+        />
       ) : (
         <ul className="space-y-4">
           {snapshot.goals.map((goal) => {
@@ -80,24 +113,35 @@ export default function GoalsPage() {
                     setError(message);
                   }}
                 >
-                  <input className="input sm:col-span-2" name="title" defaultValue={goal.title} />
-                  <input
-                    className="input"
+                  <VisibleField
+                    className="sm:col-span-2"
+                    label="Title"
+                    name="title"
+                    defaultValue={goal.title}
+                  />
+                  <VisibleField
+                    label="Already saved (FCFA)"
                     name="currentAmount"
                     type="number"
-                    min="0"
-                    step="0.01"
+                    min={0}
+                    step={1}
                     defaultValue={goal.currentAmount}
                   />
-                  <input
-                    className="input"
+                  <VisibleField
+                    label="Target amount (FCFA)"
                     name="targetAmount"
                     type="number"
-                    min="1"
-                    step="0.01"
+                    min={1}
+                    step={1}
                     defaultValue={goal.targetAmount}
                   />
-                  <input className="input sm:col-span-2" name="targetDate" type="date" defaultValue={goal.targetDate} />
+                  <VisibleField
+                    className="sm:col-span-2"
+                    label="Target date"
+                    name="targetDate"
+                    type="date"
+                    defaultValue={goal.targetDate}
+                  />
                   <div className="flex items-center justify-between sm:col-span-2">
                     <p className="text-sm text-mute">
                       {formatMoney(goal.currentAmount)} of {formatMoney(goal.targetAmount)} · due{" "}

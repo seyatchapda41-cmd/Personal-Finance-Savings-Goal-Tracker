@@ -1,24 +1,32 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { payPremiumAction } from "@/app/actions/billing";
 import { CheckoutForm } from "@/components/checkout-form";
 import { Logo } from "@/components/logo";
+import { NightModeToggle } from "@/components/night-mode-toggle";
 import { getCurrentProfile } from "@/lib/auth/profile";
 import { readPremiumReceipt } from "@/lib/billing-server";
 import { PLANS } from "@/lib/plans";
+import { nightFromCookieStore } from "@/lib/themes";
 
 export const metadata: Metadata = { title: "Buy Premium" };
 
 export default async function CheckoutPage() {
-  const [receipt, profile] = await Promise.all([
+  const [receipt, profile, store] = await Promise.all([
     readPremiumReceipt(),
     getCurrentProfile(),
+    cookies(),
   ]);
   const premium = PLANS.premium;
+  const night = nightFromCookieStore(store);
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center px-4 py-12">
-      <Logo />
+      <div className="flex items-center justify-between gap-3">
+        <Logo />
+        <NightModeToggle initialNight={night} />
+      </div>
       <h1 className="mt-8 text-2xl font-semibold">Buy Premium</h1>
       <p className="mt-2 text-sm text-mute">
         {profile
@@ -46,7 +54,11 @@ export default async function CheckoutPage() {
         <div className="mt-8 rounded-lg border border-azure bg-azure-soft p-4">
           <p className="text-sm font-medium">Payment already recorded</p>
           <p className="mt-1 text-xs text-mute">
-            Receipt {receipt.ref} · card ending {receipt.cardLast4} ·{" "}
+            Receipt {receipt.ref} ·{" "}
+            {receipt.cardLast4 === "PayPal"
+              ? "PayPal"
+              : `${receipt.brand ?? "Card"} ending ${receipt.cardLast4}`}{" "}
+            ·{" "}
             {receipt.amount}
           </p>
           <Link

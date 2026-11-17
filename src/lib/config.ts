@@ -7,3 +7,5 @@ export function isSupabaseConfigured() {
 
 export const APP_NAME = "Tempora";
 export const APP_TAGLINE = "Personal finance and savings goals, in one place.";
+export const APP_VERSION = "1.0.0";
+

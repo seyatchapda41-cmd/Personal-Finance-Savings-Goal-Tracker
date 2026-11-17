@@ -74,7 +74,43 @@ type FinanceContextValue = {
   updateProfileName: (fullName: string) => Promise<void>;
 };
 
-const FinanceContext = createContext<FinanceContextValue | null>(null);
+const EMPTY_SNAPSHOT: FinanceSnapshot = {
+  profile: { id: "", email: "", phone: "", fullName: "", plan: "free" },
+  categories: [],
+  transactions: [],
+  goals: [],
+};
+
+async function stillLoading(): Promise<string | null> {
+  return "Still loading.";
+}
+
+async function stillLoadingVoid(): Promise<void> {}
+
+// Next.js can SSR a client page before the layout provider is in the tree.
+// A loading default keeps that pass from throwing; the real provider hydrates in.
+const LOADING_FINANCE: FinanceContextValue = {
+  ready: false,
+  usingSupabase: false,
+  snapshot: EMPTY_SNAPSHOT,
+  month: monthTotals([], []),
+  balance: allTimeBalance([], []),
+  plan: "free",
+  limits: limitsFor("free"),
+  monthlyTransactionCount: 0,
+  addCategory: stillLoading,
+  updateCategory: stillLoading,
+  deleteCategory: stillLoading,
+  addTransaction: stillLoading,
+  updateTransaction: stillLoading,
+  deleteTransaction: stillLoadingVoid,
+  addGoal: stillLoading,
+  updateGoal: stillLoading,
+  deleteGoal: stillLoadingVoid,
+  updateProfileName: stillLoadingVoid,
+};
+
+const FinanceContext = createContext<FinanceContextValue>(LOADING_FINANCE);
 
 function clearResetBooksFlag() {
   if (typeof document === "undefined") return;
@@ -440,9 +476,7 @@ export function FinanceProvider({
 }
 
 export function useFinance() {
-  const ctx = useContext(FinanceContext);
-  if (!ctx) throw new Error("useFinance must be used within FinanceProvider");
-  return ctx;
+  return useContext(FinanceContext);
 }
 
 function mapCategory(row: Record<string, unknown>): Category {

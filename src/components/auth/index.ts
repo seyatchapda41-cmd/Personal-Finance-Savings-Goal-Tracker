@@ -1,0 +1,9 @@
+export { AuthChooser } from "@/components/auth/auth-chooser";
+export { AuthIdentityCard } from "@/components/auth/auth-identity-card";
+export { DeviceProfileCard } from "@/components/auth/device-profile-card";
+export { SavedProfilesList } from "@/components/auth/saved-profiles-list";
+export { LoginForm } from "@/components/auth/login-form";
+export { RegisterForm } from "@/components/auth/register-form";
+export { AccountSwitcher } from "@/components/auth/account-switcher";
+export { RemoveProfileDialog } from "@/components/auth/remove-profile-dialog";
+export { SessionGuard } from "@/components/auth/session-guard";

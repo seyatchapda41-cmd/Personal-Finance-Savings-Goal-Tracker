@@ -3,16 +3,17 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Logo } from "@/components/logo";
+import { NightModeToggle } from "@/components/night-mode-toggle";
 
 const LINKS = [
-  { href: "/features", label: "Features" },
-  { href: "/how-it-works", label: "How it works" },
-  { href: "/security", label: "Security" },
+  { href: "/#features", label: "Features" },
+  { href: "/#how-it-works", label: "How it works" },
   { href: "/pricing", label: "Pricing" },
+  { href: "/security", label: "Security" },
   { href: "/about", label: "About" },
 ];
 
-export function SiteHeader() {
+export function SiteHeader({ night = false }: { night?: boolean }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -27,6 +28,7 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="hidden items-center gap-3 md:flex">
+          <NightModeToggle initialNight={night} />
           <Link href="/login" className="text-sm text-mute hover:text-ink">
             Log in
           </Link>
@@ -58,6 +60,7 @@ export function SiteHeader() {
             <Link href="/login" onClick={() => setOpen(false)}>
               Log in
             </Link>
+            <NightModeToggle initialNight={night} />
             <Link href="/signup" className="btn-primary text-center" onClick={() => setOpen(false)}>
               Start tracking
             </Link>

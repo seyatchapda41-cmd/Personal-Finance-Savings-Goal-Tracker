@@ -48,6 +48,5 @@ export async function saveMonthlyBudgetAction(formData: FormData): Promise<{
   }
 
   revalidatePath("/app/budget");
-  revalidatePath("/admin", "layout");
   return { ok: true };
 }

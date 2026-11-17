@@ -1,13 +1,24 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { DEMO_SESSION_COOKIE } from "@/lib/cookie-names";
+import { KNOWN_ACCOUNTS_COOKIE } from "@/lib/device-profiles";
 import { updateSession } from "@/lib/supabase/middleware";
+
+function copyCookies(from: NextResponse, to: NextResponse) {
+  from.cookies.getAll().forEach((cookie) => {
+    to.cookies.set(cookie);
+  });
+}
+
+function clearSavedAccounts(response: NextResponse) {
+  response.cookies.set(KNOWN_ACCOUNTS_COOKIE, "", { path: "/", maxAge: 0 });
+  return response;
+}
 
 export async function middleware(request: NextRequest) {
   const { response, userId } = await updateSession(request);
   const path = request.nextUrl.pathname;
-  // Staff sign in lives under /admin but must stay reachable while signed out.
-  const isAdminLogin = path.startsWith("/admin/login");
-  const isAdmin = path.startsWith("/admin") && !isAdminLogin;
-  const isApp = path.startsWith("/app") || isAdmin;
+
+  const isApp = path.startsWith("/app");
   const isAuth =
     path.startsWith("/login") ||
     path.startsWith("/signup") ||
@@ -15,19 +26,30 @@ export async function middleware(request: NextRequest) {
 
   if (isApp && !userId) {
     const url = request.nextUrl.clone();
-    url.pathname = isAdmin ? "/admin/login" : "/login";
-    if (!isAdmin) url.searchParams.set("next", path);
-    return NextResponse.redirect(url);
+    url.pathname = "/login";
+    url.searchParams.set("next", path);
+    const hadSession =
+      Boolean(request.cookies.get(DEMO_SESSION_COOKIE)?.value) ||
+      request.cookies.getAll().some(
+        (cookie) =>
+          cookie.name.includes("auth-token") || cookie.name.startsWith("sb-"),
+      );
+    if (hadSession) url.searchParams.set("reason", "expired");
+    const redirect = NextResponse.redirect(url);
+    copyCookies(response, redirect);
+    return clearSavedAccounts(redirect);
   }
 
   if (isAuth && userId) {
     const url = request.nextUrl.clone();
     url.pathname = "/app/account";
     url.search = "";
-    return NextResponse.redirect(url);
+    const redirect = NextResponse.redirect(url);
+    copyCookies(response, redirect);
+    return clearSavedAccounts(redirect);
   }
 
-  return response;
+  return clearSavedAccounts(response);
 }
 
 export const config = {

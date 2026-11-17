@@ -1,3 +1,4 @@
+import { formatMoney } from "@/lib/format";
 import type { Plan } from "@/lib/types";
 
 export const SUPPORT_MAX_STARS = 5;
@@ -26,7 +27,7 @@ export type PlanLimits = {
 export const PLANS: Record<Plan, PlanLimits> = {
   free: {
     label: "Standard",
-    priceLabel: "$0",
+    priceLabel: formatMoney(0),
     priceAmount: 0,
     monthlyTransactions: 50,
     goals: 2,
@@ -50,8 +51,8 @@ export const PLANS: Record<Plan, PlanLimits> = {
   },
   premium: {
     label: "Premium",
-    priceLabel: "$20.99",
-    priceAmount: 20.99,
+    priceLabel: formatMoney(12_500),
+    priceAmount: 12_500,
     monthlyTransactions: null,
     goals: null,
     categories: null,

@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { EmptyState } from "@/components/empty-state";
+import { Notice } from "@/components/notice";
+import { VisibleField } from "@/components/visible-field";
 import { categoryById, signedAmount } from "@/lib/analytics";
 import { formatMoney, todayIso } from "@/lib/format";
 import { useFinance } from "@/lib/finance-context";
@@ -17,20 +20,37 @@ export default function TransactionsPage() {
     deleteTransaction,
   } = useFinance();
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "income" | "expense">("all");
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<"date" | "amount">("date");
+  const [formKey, setFormKey] = useState(0);
 
   const incomeCats = snapshot.categories.filter((c) => c.type === "income");
   const expenseCats = snapshot.categories.filter((c) => c.type === "expense");
 
   const rows = useMemo(() => {
+    const needle = query.trim().toLowerCase();
     return [...snapshot.transactions]
-      .sort((a, b) => b.date.localeCompare(a.date))
       .filter((tx) => {
-        if (filter === "all") return true;
-        return categoryById(snapshot.categories, tx.categoryId)?.type === filter;
+        if (filter !== "all") {
+          if (categoryById(snapshot.categories, tx.categoryId)?.type !== filter) {
+            return false;
+          }
+        }
+        if (!needle) return true;
+        const category = categoryById(snapshot.categories, tx.categoryId);
+        return (
+          tx.description.toLowerCase().includes(needle) ||
+          (category?.name ?? "").toLowerCase().includes(needle)
+        );
+      })
+      .sort((a, b) => {
+        if (sort === "amount") return b.amount - a.amount;
+        return b.date.localeCompare(a.date);
       });
-  }, [filter, snapshot.categories, snapshot.transactions]);
+  }, [filter, query, sort, snapshot.categories, snapshot.transactions]);
 
   if (!ready) return <p className="text-sm text-mute">Loading…</p>;
 
@@ -88,72 +108,136 @@ export default function TransactionsPage() {
             description: String(data.get("description")),
           });
           setError(message);
-          if (!message) form.reset();
+          if (!message) {
+            form.reset();
+            setFormKey((key) => key + 1);
+            setNotice("Transaction saved.");
+          } else {
+            setNotice(null);
+          }
         }}
       >
-        <label className="text-sm lg:col-span-2">
-          Category
-          <select name="categoryId" className="input mt-1" required defaultValue="">
-            <option value="" disabled>
-              Choose
-            </option>
-            <optgroup label="Income">
-              {incomeCats.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </optgroup>
-            <optgroup label="Expense">
-              {expenseCats.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </optgroup>
-          </select>
-        </label>
-        <label className="text-sm">
-          Amount
-          <input className="input mt-1" name="amount" type="number" min="0.01" step="0.01" required />
-        </label>
-        <label className="text-sm">
-          Date
-          <input className="input mt-1" name="date" type="date" required defaultValue={todayIso()} />
-        </label>
-        <label className="text-sm sm:col-span-2 lg:col-span-4">
-          Description
-          <input className="input mt-1" name="description" placeholder="Optional note" />
-        </label>
+        <VisibleField
+          key={`category-${formKey}`}
+          className="lg:col-span-2"
+          label="Category"
+          name="categoryId"
+          as="select"
+          required
+          defaultValue=""
+        >
+          <option value="" disabled>
+            Choose
+          </option>
+          <optgroup label="Income">
+            {incomeCats.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </optgroup>
+          <optgroup label="Expense">
+            {expenseCats.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </optgroup>
+        </VisibleField>
+        <VisibleField
+          key={`amount-${formKey}`}
+          label="Amount (FCFA)"
+          name="amount"
+          type="number"
+          min={1}
+          step={1}
+          required
+        />
+        <VisibleField
+          key={`date-${formKey}`}
+          label="Date"
+          name="date"
+          type="date"
+          required
+          defaultValue={todayIso()}
+        />
+        <VisibleField
+          key={`description-${formKey}`}
+          className="sm:col-span-2 lg:col-span-4"
+          label="Description"
+          name="description"
+          placeholder="Optional note"
+        />
         <div className="flex items-end">
           <button className="btn-primary w-full" type="submit">
             Add
           </button>
         </div>
-        {error ? <p className="text-sm text-rose-600 sm:col-span-2 lg:col-span-5">{error}</p> : null}
+        {error ? (
+          <div className="sm:col-span-2 lg:col-span-5">
+            <Notice tone="bad">{error}</Notice>
+          </div>
+        ) : null}
+        {notice ? (
+          <div className="sm:col-span-2 lg:col-span-5">
+            <Notice>{notice}</Notice>
+          </div>
+        ) : null}
       </form>
 
-      <div className="flex gap-2">
-        {(["all", "income", "expense"] as const).map((key) => (
-          <button
-            key={key}
-            type="button"
-            className={`rounded-md px-3 py-1.5 text-sm ${
-              filter === key
-                ? "bg-azure-strong text-white"
-                : "border border-line bg-white text-ink"
-            }`}
-            onClick={() => setFilter(key)}
-          >
-            {key}
-          </button>
-        ))}
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="flex gap-2">
+          {(["all", "income", "expense"] as const).map((key) => (
+            <button
+              key={key}
+              type="button"
+              className={`rounded-[var(--radius-md)] px-3 py-1.5 text-sm ${
+                filter === key
+                  ? "bg-azure-strong text-white"
+                  : "border border-line bg-panel text-ink"
+              }`}
+              onClick={() => setFilter(key)}
+            >
+              {key}
+            </button>
+          ))}
+        </div>
+        <VisibleField
+          className="sm:max-w-xs"
+          label="Search"
+          name="query"
+          type="search"
+          placeholder="Search description or category"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+        <VisibleField
+          className="sm:w-auto"
+          label="Sort"
+          name="sort"
+          as="select"
+          value={sort}
+          onChange={(event) =>
+            setSort(event.target.value === "amount" ? "amount" : "date")
+          }
+        >
+          <option value="date">Newest date</option>
+          <option value="amount">Largest amount</option>
+        </VisibleField>
       </div>
 
-      {rows.length === 0 ? (
-        <p className="text-sm text-mute">No transactions in this view.</p>
+      {snapshot.transactions.length === 0 ? (
+        <EmptyState
+          title="No transactions yet"
+          body="Log the first income or expense. Dashboard totals will follow immediately."
+        />
+      ) : rows.length === 0 ? (
+        <EmptyState
+          title="Nothing in this view"
+          body="Try another filter, or clear the search to see everything again."
+        />
       ) : (
-        <div className="on-blue overflow-x-auto rounded-xl border border-line bg-panel">
+        <div className="overflow-x-auto rounded-xl border border-line bg-panel">
           <table className="w-full min-w-[640px] text-left text-sm">
             <thead className="border-b border-line text-mute">
               <tr>
@@ -194,23 +278,37 @@ export default function TransactionsPage() {
                             else setError(message);
                           }}
                         >
-                          <select name="categoryId" className="input" defaultValue={tx.categoryId}>
+                          <VisibleField
+                            label="Category"
+                            name="categoryId"
+                            as="select"
+                            defaultValue={tx.categoryId}
+                          >
                             {snapshot.categories.map((c) => (
                               <option key={c.id} value={c.id}>
                                 {c.name}
                               </option>
                             ))}
-                          </select>
-                          <input
-                            className="input"
+                          </VisibleField>
+                          <VisibleField
+                            label="Amount (FCFA)"
                             name="amount"
                             type="number"
-                            min="0.01"
-                            step="0.01"
+                            min={1}
+                            step={1}
                             defaultValue={tx.amount}
                           />
-                          <input className="input" name="date" type="date" defaultValue={tx.date} />
-                          <input className="input" name="description" defaultValue={tx.description} />
+                          <VisibleField
+                            label="Date"
+                            name="date"
+                            type="date"
+                            defaultValue={tx.date}
+                          />
+                          <VisibleField
+                            label="Description"
+                            name="description"
+                            defaultValue={tx.description}
+                          />
                           <div className="flex gap-2">
                             <button className="btn-primary" type="submit">
                               Save

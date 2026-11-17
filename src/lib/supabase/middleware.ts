@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isSupabaseConfigured } from "@/lib/config";
 import { DEMO_SESSION_COOKIE } from "@/lib/cookie-names";
+import { supabaseFetch } from "@/lib/supabase/fetch";
 
 export {
   DEMO_ACCOUNTS_COOKIE,
@@ -17,6 +18,7 @@ export async function updateSession(request: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
+        global: { fetch: supabaseFetch },
         cookies: {
           getAll() {
             return request.cookies.getAll();
@@ -32,10 +34,16 @@ export async function updateSession(request: NextRequest) {
         },
       },
     );
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    return { response, userId: user?.id ?? null, phone: user?.phone ?? null };
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      return { response, userId: user?.id ?? null, phone: user?.phone ?? null };
+    } catch {
+      // A saved browser card is not the account. When the database is
+      // configured, only a real session from that database can sign someone in.
+      return { response, userId: null, phone: null };
+    }
   }
 
   const raw = request.cookies.get(DEMO_SESSION_COOKIE)?.value;

@@ -6,6 +6,7 @@ export type DemoAccount = {
   email: string;
   fullName: string;
   plan: Plan;
+  passwordHash?: string;
 };
 
 // Demo mode has no database, so each account (keyed by phone number) is

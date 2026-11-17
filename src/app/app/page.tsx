@@ -13,6 +13,8 @@ export default function DashboardPage() {
   const recent = [...snapshot.transactions]
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 6);
+  const fresh =
+    snapshot.transactions.length === 0 && snapshot.goals.length === 0;
 
   return (
     <div className="mx-auto max-w-5xl space-y-8">
@@ -22,6 +24,42 @@ export default function DashboardPage() {
           Hello {snapshot.profile.fullName}. Here is this month and your goals.
         </p>
       </div>
+
+      {fresh ? (
+        <section className="card space-y-4">
+          <div>
+            <p className="text-xs text-mute">Getting started</p>
+            <h2 className="mt-1 font-semibold">Three steps to a useful month</h2>
+            <p className="mt-1 text-sm text-mute">
+              Categories are already here. Add money as it moves, then name a
+              savings goal.
+            </p>
+          </div>
+          <ol className="grid gap-3 sm:grid-cols-3">
+            <li className="rounded-[var(--radius-md)] border border-line p-3">
+              <p className="text-xs text-mute">1</p>
+              <p className="mt-1 font-medium">Log a transaction</p>
+              <Link href="/app/transactions" className="mt-2 inline-block text-sm text-azure">
+                Open transactions
+              </Link>
+            </li>
+            <li className="rounded-[var(--radius-md)] border border-line p-3">
+              <p className="text-xs text-mute">2</p>
+              <p className="mt-1 font-medium">Name a savings goal</p>
+              <Link href="/app/goals" className="mt-2 inline-block text-sm text-azure">
+                Create a target
+              </Link>
+            </li>
+            <li className="rounded-[var(--radius-md)] border border-line p-3">
+              <p className="text-xs text-mute">3</p>
+              <p className="mt-1 font-medium">Tune categories</p>
+              <Link href="/app/categories" className="mt-2 inline-block text-sm text-azure">
+                Edit labels
+              </Link>
+            </li>
+          </ol>
+        </section>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="card">

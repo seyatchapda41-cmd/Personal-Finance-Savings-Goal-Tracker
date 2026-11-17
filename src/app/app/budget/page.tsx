@@ -9,6 +9,7 @@ import { expensesByCategoryName } from "@/lib/analytics";
 import { currentMonthKey, formatMoney } from "@/lib/format";
 import { useFinance } from "@/lib/finance-context";
 import { isSupabaseConfigured } from "@/lib/config";
+import { VisibleField } from "@/components/visible-field";
 
 function localKey(userId: string, month: string) {
   return `tempora.budget.${userId}.${month}`;
@@ -133,18 +134,16 @@ export default function BudgetPage() {
           setPending(false);
         }}
       >
-        <label className="block text-sm">
-          Monthly spending cap ({month})
-          <input
-            className="input mt-1"
-            type="number"
-            min="0"
-            step="0.01"
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            disabled={!loaded}
-          />
-        </label>
+        <VisibleField
+          label={`Monthly spending cap in FCFA (${month})`}
+          name="expenseLimit"
+          type="number"
+          min={0}
+          step={1}
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          disabled={!loaded}
+        />
         {error ? <p className="text-sm text-rose-600">{error}</p> : null}
         <button className="btn-primary" type="submit" disabled={pending}>
           {pending ? "Saving…" : "Save budget"}

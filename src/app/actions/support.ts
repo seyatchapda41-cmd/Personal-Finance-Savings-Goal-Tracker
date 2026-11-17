@@ -15,7 +15,6 @@ import {
 
 function refreshSupport() {
   revalidatePath("/app/support");
-  revalidatePath("/admin", "layout");
 }
 
 export async function sendSupportMessageAction(formData: FormData): Promise<{

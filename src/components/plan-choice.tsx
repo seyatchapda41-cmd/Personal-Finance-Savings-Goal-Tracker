@@ -54,8 +54,8 @@ export function PlanChoice({
           aria-pressed={selected === "free"}
           className={`rounded-lg border p-4 text-left transition-colors ${
             selected === "free"
-              ? "on-blue border-azure-strong bg-panel"
-              : "border-line bg-white hover:border-azure"
+              ? "border-azure-strong bg-azure-soft"
+              : "border-line bg-panel hover:border-azure"
           }`}
         >
           <span className="flex items-baseline justify-between">
@@ -69,7 +69,7 @@ export function PlanChoice({
 
         <Link
           href="/checkout"
-          className="rounded-lg border border-line bg-white p-4 text-left transition-colors hover:border-azure"
+          className="rounded-lg border border-line bg-panel p-4 text-left transition-colors hover:border-azure"
         >
           <span className="flex items-baseline justify-between">
             <span className="font-medium">{PLANS.premium.label}</span>

@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { supabaseFetch } from "@/lib/supabase/fetch";
 
 // Service role key: bypasses row level security so the founder panel can read
 // and change every client's rows. Server side only — never import this from a
@@ -9,6 +10,7 @@ export function createAdminSupabase() {
   if (!url || !key) return null;
   return createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
+    global: { fetch: supabaseFetch },
   });
 }
 

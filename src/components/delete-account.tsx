@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { deleteAccountAction } from "@/app/actions/auth";
+import { VisibleField } from "@/components/visible-field";
 import { clearSnapshot } from "@/lib/demo/storage";
 
 export function DeleteAccount({
@@ -56,16 +57,14 @@ export function DeleteAccount({
         This deletes your account for good. Your transactions, categories and
         savings goals go with it and cannot be recovered.
       </p>
-      <label className="block text-sm">
-        Type DELETE to confirm
-        <input
-          className="input mt-1"
-          value={confirmation}
-          onChange={(event) => setConfirmation(event.target.value)}
-          autoComplete="off"
-          placeholder="DELETE"
-        />
-      </label>
+      <VisibleField
+        label="Type DELETE to confirm"
+        name="confirm"
+        value={confirmation}
+        onChange={(event) => setConfirmation(event.target.value)}
+        autoComplete="off"
+        placeholder="DELETE"
+      />
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}
       <div className="flex flex-wrap gap-3">
         <button

@@ -1,4 +1,4 @@
-import { normalizePhone } from "@/lib/phone";
+import { canonicalPhone, phoneDigits } from "@/lib/phone";
 
 // Supabase phone auth needs a paid SMS provider to send verification codes.
 // The phone number stays the credential clients type, while the account is held
@@ -7,7 +7,7 @@ import { normalizePhone } from "@/lib/phone";
 const LOGIN_EMAIL_DOMAIN = "phone.tempora.app";
 
 export function loginEmailForPhone(phone: string) {
-  const digits = normalizePhone(phone).replace(/\D/g, "");
+  const digits = phoneDigits(canonicalPhone(phone));
   return `p${digits}@${LOGIN_EMAIL_DOMAIN}`;
 }
 

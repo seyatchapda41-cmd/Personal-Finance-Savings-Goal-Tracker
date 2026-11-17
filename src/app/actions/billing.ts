@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth/profile";
 import { createReceiptRef, validateCard, type PremiumReceipt } from "@/lib/billing";
+import { isPaymentBrand, paymentBrandLabel } from "@/components/payment-brands";
 import { savePremiumReceipt } from "@/lib/billing-server";
 import { isSupabaseConfigured } from "@/lib/config";
 import { addDemoPayment } from "@/lib/demo/ledger";
@@ -42,19 +43,32 @@ async function recordPayment(
 // Stands in for a payment provider. Replace this with a real charge plus a
 // provider webhook before taking money: nothing here talks to a card network.
 export async function payPremiumAction(formData: FormData) {
-  const result = validateCard({
-    name: String(formData.get("cardName") ?? ""),
-    number: String(formData.get("cardNumber") ?? ""),
-    expiry: String(formData.get("cardExpiry") ?? ""),
-    cvc: String(formData.get("cardCvc") ?? ""),
-  });
-  if ("error" in result) return { error: result.error };
+  const picked = String(formData.get("brand") ?? "visa");
+  const brand = isPaymentBrand(picked) ? picked : "visa";
+
+  let last4 = "";
+  if (brand === "paypal") {
+    const email = String(formData.get("paypalEmail") ?? "").trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return { error: "Enter the email address for that PayPal account." };
+    }
+    last4 = "PayPal";
+  } else {
+    const result = validateCard({
+      number: String(formData.get("cardNumber") ?? ""),
+      expiry: String(formData.get("cardExpiry") ?? ""),
+      cvc: String(formData.get("cardCvc") ?? ""),
+    });
+    if ("error" in result) return { error: result.error };
+    last4 = result.last4;
+  }
 
   const receipt: PremiumReceipt = {
     ref: createReceiptRef(),
     paidAt: new Date().toISOString(),
     amount: `${PLANS.premium.priceLabel}/month`,
-    cardLast4: result.last4,
+    cardLast4: last4,
+    brand: paymentBrandLabel(brand),
   };
 
   // Someone already signed in is upgrading, so apply it to their account now.

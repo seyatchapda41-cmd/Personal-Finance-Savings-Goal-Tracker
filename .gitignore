@@ -16,6 +16,10 @@
 # next.js
 /.next/
 /out/
+/admin-dashboard/.next/
+/admin-dashboard/out/
+/admin-dashboard/node_modules/
+/admin-dashboard/next-env.d.ts
 
 # production
 /build

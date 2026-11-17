@@ -1,9 +1,13 @@
+export const CURRENCY_CODE = "XAF";
+export const CURRENCY_LABEL = "FCFA";
+
 export function formatMoney(amount: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2,
-  }).format(amount);
+  const value = Number.isFinite(amount) ? Math.round(amount) : 0;
+  const n = new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
+  }).format(Math.abs(value));
+  return `${value < 0 ? "-" : ""}${n} ${CURRENCY_LABEL}`;
 }
 
 export function formatDate(iso: string) {

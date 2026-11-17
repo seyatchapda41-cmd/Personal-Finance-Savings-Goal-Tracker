@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { changePlanAction, signOutAction } from "@/app/actions/auth";
 import { DeleteAccount } from "@/components/delete-account";
+import { VisibleField } from "@/components/visible-field";
+import { NightModeToggle } from "@/components/night-mode-toggle";
 import { PLANS } from "@/lib/plans";
 import { useFinance } from "@/lib/finance-context";
 
@@ -48,6 +50,22 @@ export default function SettingsPage() {
             : "Running in local demo mode. Connect Supabase for production."}
         </p>
       </div>
+
+      <section className="card space-y-3">
+        <div>
+          <p className="text-xs text-mute">Look and feel</p>
+          <h2 className="mt-1 font-semibold">Theme, text style and night mode</h2>
+          <p className="mt-1 text-sm text-mute">
+            Colours and typeface are saved on this device. Night mode uses a
+            light (white) typeface colour and will change the current colour
+            background — you will be asked before it turns on.
+          </p>
+        </div>
+        <NightModeToggle initialNight={false} />
+        <Link href="/app/appearance" className="btn-secondary inline-flex">
+          Choose appearance
+        </Link>
+      </section>
 
       <section className="card space-y-4">
         <div className="flex items-start justify-between gap-4">
@@ -112,18 +130,23 @@ export default function SettingsPage() {
           setSaved(true);
         }}
       >
-        <label className="block text-sm">
-          Full name
-          <input className="input mt-1" name="fullName" defaultValue={snapshot.profile.fullName} />
-        </label>
-        <label className="block text-sm">
-          Phone number (login)
-          <input className="input mt-1" value={snapshot.profile.phone} disabled />
-        </label>
-        <label className="block text-sm">
-          Email
-          <input className="input mt-1" value={snapshot.profile.email} disabled />
-        </label>
+        <VisibleField
+          label="Full name"
+          name="fullName"
+          defaultValue={snapshot.profile.fullName}
+        />
+        <VisibleField
+          label="Phone number (login)"
+          name="phone"
+          value={snapshot.profile.phone}
+          disabled
+        />
+        <VisibleField
+          label="Email"
+          name="email"
+          value={snapshot.profile.email}
+          disabled
+        />
         <button className="btn-primary" type="submit">
           Save profile
         </button>

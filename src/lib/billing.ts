@@ -9,10 +9,10 @@ export type PremiumReceipt = {
   paidAt: string;
   amount: string;
   cardLast4: string;
+  brand?: string;
 };
 
 export type CardInput = {
-  name: string;
   number: string;
   expiry: string;
   cvc: string;
@@ -43,8 +43,6 @@ function expiryInFuture(month: number, year: number) {
 export function validateCard(
   input: CardInput,
 ): { error: string } | { last4: string } {
-  if (!input.name.trim()) return { error: "Enter the name on the card." };
-
   const digits = input.number.replace(/\D/g, "");
   if (digits.length < 13 || digits.length > 19) {
     return { error: "Enter a card number with 13 to 19 digits." };

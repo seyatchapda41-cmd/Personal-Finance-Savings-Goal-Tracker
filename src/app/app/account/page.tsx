@@ -32,15 +32,10 @@ export default function AccountPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-8">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-sm text-mute">Account holder</p>
-          <h1 className="mt-1 text-3xl font-semibold">{profile.fullName}</h1>
-          <p className="mt-2 text-sm text-mute">
-            {profile.phone}
-            {profile.email ? ` · ${profile.email}` : ""} · {limits.label} account
-          </p>
-        </div>
+      <header className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className="card px-5 py-3 font-sans text-3xl font-semibold tracking-tight">
+          {profile.fullName}
+        </h1>
         <form action={signOutAction}>
           <button type="submit" className="btn-secondary">
             Sign out
@@ -129,7 +124,7 @@ export default function AccountPage() {
                       <span className="text-mute">{formatMoney(total)}</span>
                     </div>
                     <div className="mt-2 h-2 overflow-hidden rounded-full bg-sand">
-                      <div className="h-full bg-white" style={{ width: `${share}%` }} />
+                      <div className="h-full bg-azure" style={{ width: `${share}%` }} />
                     </div>
                   </li>
                 );

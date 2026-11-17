@@ -1,12 +1,16 @@
 {
   "name": "personal-finance-savings-goal-tracker",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:admin": "npm --prefix admin-dashboard run dev",
     "build": "next build",
+    "build:admin": "npm --prefix admin-dashboard run build",
     "start": "next start",
-    "lint": "eslint"
+    "start:admin": "npm --prefix admin-dashboard run start",
+    "lint": "eslint",
+    "test": "vitest run"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",
@@ -23,6 +27,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.2",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.11"
   }
 }

@@ -8,8 +8,8 @@ export const metadata: Metadata = { title: "Pricing" };
 export default function PricingPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
-      <h1 className="text-3xl font-semibold">Pricing</h1>
-      <p className="mt-3 max-w-xl text-mute">
+      <h1 className="text-3xl font-semibold tracking-tight">Pricing</h1>
+      <p className="mt-3 max-w-xl leading-7 text-mute">
         Two account types. Standard covers everyday tracking. Premium removes the
         limits when you are running a full budget every month.
       </p>
@@ -53,7 +53,7 @@ export default function PricingPage() {
           </div>
         </div>
 
-        <div className="card border-white ring-2 ring-azure-strong">
+        <div className="card ring-2 ring-azure-strong">
           <p className="text-sm uppercase tracking-wide text-azure">
             {PLANS.premium.label}
           </p>
